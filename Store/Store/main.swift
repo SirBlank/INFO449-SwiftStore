@@ -59,34 +59,87 @@ class Item : SKU {
 class Coupon {
     var discountedItem : String
     var discountPerc : Int
+    var used : Bool
     
-    init(discountedItem: String, discountPerc: Int) {
+    init(discountedItem: String, discountPerc: Int, used: Bool) {
         self.discountedItem = discountedItem
         self.discountPerc = discountPerc
+        self.used = used
     }
     
+    func useCoupon() {
+        used = true
+    }
     
+    func getDiscount() -> Double {
+        return Double(100 - discountPerc) / 100
+    }
+}
+
+class RainCheck {
+    var rainChecks : [String : Int]
+    
+    init(_ rainChecks: [String : Int]) {
+        self.rainChecks = rainChecks
+    }
+    
+    func getRainChecks() -> [String : Int]{
+        return rainChecks
+    }
+    
+    func addRainCheck(_ itemName : String, _ specialPrice : Int) {
+        if rainChecks.keys.contains(itemName) {
+            print("Rain check already exist, updating to given special price")
+            rainChecks[itemName] = specialPrice
+        } else {
+            rainChecks[itemName] = specialPrice
+        }
+    }
+    
+    func removeRainCheck(_ itemName : String) {
+        if rainChecks.keys.contains(itemName) {
+            rainChecks.removeValue(forKey: itemName)
+        } else {
+            print("The given rain check does not exist")
+        }
+    }
 }
 
 class Receipt {
     var scannedItems : [SKU]
+    var scannedCoupons : [Coupon]
     
     init() {
         self.scannedItems = []
+        self.scannedCoupons = []
     }
     
     func addItem(_ item : SKU) {
         scannedItems.append(item)
     }
     
+    func addCoupon(_ coupon : Coupon) {
+        scannedCoupons.append(coupon)
+    }
+    
     func items() -> [SKU] {
         return scannedItems
+    }
+    
+    func coupons() -> [Coupon] {
+        return scannedCoupons
     }
     
     func total() -> Int {
         var totalPrice = 0
         for item in scannedItems {
-            totalPrice += item.price()
+            if let couponIndex = scannedCoupons.firstIndex(where: { coupon in !coupon.used && item.name.contains(coupon.discountedItem)}) {
+                let coupon = scannedCoupons[couponIndex]
+                totalPrice += Int(round(Double(item.price()) * coupon.getDiscount()))
+                coupon.useCoupon()
+            } else {
+                totalPrice += item.price()
+            }
         }
         return totalPrice
     }
@@ -105,13 +158,19 @@ class Receipt {
 
 class Register {
     var receipt : Receipt
+    var rainCheck : RainCheck?
     
-    init() {
+    init(_ rainCheck : RainCheck? = RainCheck([String : Int]())) {
         self.receipt = Receipt()
+        self.rainCheck = rainCheck
     }
     
-    func scan(_ sku : SKU) {
+    func scan(_ sku : SKU, _ coupon : Coupon? = nil) {
+        if let coupon = coupon {
+            receipt.addCoupon(coupon)
+        }
         receipt.addItem(sku)
+        
     }
     
     func subtotal() -> Int {
