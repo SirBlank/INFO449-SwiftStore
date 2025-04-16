@@ -72,4 +72,22 @@ TOTAL: $7.97
         register.scan(Item(name: "Beans (8oz Can)", priceEach: 199))
         XCTAssertEqual(199, register.subtotal())
     }
+    
+    func testOneWeighedItem() {
+        register.scan(WeighedItem(name: "Steak", lbs: 1.1, pricePerLB: 899))
+        XCTAssertEqual(989, register.subtotal())
+    }
+    
+    func testThreeDifferentWeighedItems() {
+        register.scan(WeighedItem(name: "Steak", lbs: 1.1, pricePerLB: 899))
+        register.scan(WeighedItem(name: "Apple", lbs: 2.3, pricePerLB: 499))
+        register.scan(WeighedItem(name: "Eggplant", lbs: 3, pricePerLB: 149))
+        XCTAssertEqual(2584, register.subtotal())
+    }
+    
+    func testWeighedAndUnweighedItem() {
+        register.scan(WeighedItem(name: "Steak", lbs: 1.1, pricePerLB: 899))
+        register.scan(Item(name: "Beans (8oz Can)", priceEach: 199))
+        XCTAssertEqual(1188, register.subtotal())
+    }
 }

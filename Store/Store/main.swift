@@ -12,6 +12,36 @@ protocol SKU {
     func price() -> Int
 }
 
+protocol PricingSchema {
+    func calculatePrice(_ scannedItems : [Item]) -> Int
+}
+
+class StandardPricing : PricingSchema {
+    func calculatePrice(_ scannedItems : [Item]) -> Int {
+        var totalPrice = 0
+        for item in scannedItems {
+            totalPrice += item.price()
+        }
+        return totalPrice
+    }
+}
+
+class WeighedItem : SKU {
+    var name : String
+    var lbs : Double
+    var pricePerLB : Int
+    
+    init(name: String, lbs: Double, pricePerLB: Int) {
+        self.name = name
+        self.lbs = lbs
+        self.pricePerLB = pricePerLB
+    }
+    
+    func price() -> Int {
+        return Int(round(Double(pricePerLB) * lbs))
+    }
+}
+
 class Item : SKU {
     var name : String
     var priceEach : Int
@@ -26,18 +56,30 @@ class Item : SKU {
     }
 }
 
+class Coupon {
+    var discountedItem : String
+    var discountPerc : Int
+    
+    init(discountedItem: String, discountPerc: Int) {
+        self.discountedItem = discountedItem
+        self.discountPerc = discountPerc
+    }
+    
+    
+}
+
 class Receipt {
-    var scannedItems : [Item]
+    var scannedItems : [SKU]
     
     init() {
         self.scannedItems = []
     }
     
-    func addItem(_ item : Item) {
+    func addItem(_ item : SKU) {
         scannedItems.append(item)
     }
     
-    func items() -> [Item] {
+    func items() -> [SKU] {
         return scannedItems
     }
     
@@ -53,7 +95,7 @@ class Receipt {
         var stringOutput = ""
         stringOutput += "Receipt:\n"
         for item in scannedItems {
-            stringOutput += "\(item.name): $\(Double(item.priceEach) / 100)\n"
+            stringOutput += "\(item.name): $\(Double(item.price()) / 100)\n"
         }
         stringOutput += "------------------\n"
         stringOutput += "TOTAL: $\(Double(self.total()) / 100)"
@@ -68,7 +110,7 @@ class Register {
         self.receipt = Receipt()
     }
     
-    func scan(_ sku : Item) {
+    func scan(_ sku : SKU) {
         receipt.addItem(sku)
     }
     
